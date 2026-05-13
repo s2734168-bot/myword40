@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>馬卡龍單字卡 - 緊湊版</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #fcfaf7;
+            --card-lavender: #C7CEEA;
+            --btn-again: #FFB7B2;
+            --btn-hard: #FFDAC1;
+            --btn-good: #B5EAD7;
+            --btn-easy: #E2F0CB;
+            --text-main: #4a4a4a;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang TC', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden; /* 防止出現捲軸 */
+            color: var(--text-main);
+        }
+
+        /* 頂部控制與說明 */
+        .header-controls {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+        }
+
+        .info-btn {
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #infoOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .info-content {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 350px;
+            width: 80%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        /* 進度條與統計 */
+        .info-panel {
+            width: 85%;
+            max-width: 420px;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-container {
+            width: 85%;
+            max-width: 420px;
+            height: 8px;
+            background-color: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #B5EAD7, #C7CEEA);
+            transition: width 0.3s ease;
+        }
+
+        /* 卡片介面縮小至 90% */
+        .card-wrapper {
+            perspective: 1000px;
+            width: 90%;
+            max-width: 420px;
+            height: 460px; /* 原 520px 的 90% */
+            cursor: pointer;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 25px;
+            padding: 25px 20px;
+            box-sizing: border-box;
+            background-color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-front {
+            background-color: var(--card-lavender);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .word-display {
+            font-size: 3.2rem;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            text-align: left;
+            justify-content: space-between;
+        }
+
+        .back-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            font-size: 1.05rem; /* 字體微縮 */
+            line-height: 1.5;
+            white-space: pre-line;
+            color: #444;
+            padding-right: 5px;
+        }
+
+        /* 按鈕組優化 */
+        .difficulty-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .diff-btn {
+            border: none;
+            padding: 10px 2px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .btn-again { background-color: var(--btn-again); }
+        .btn-hard { background-color: var(--btn-hard); }
+        .btn-good { background-color: var(--btn-good); }
+        .btn-easy { background-color: var(--btn-easy); }
+
+        .audio-btn {
+            background: rgba(255,255,255,0.8);
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 10px;
+            font-size: 0.75rem;
+            color: #ccc;
+        }
+
+        kbd { background: #eee; border-radius: 3px; padding: 1px 4px; border: 1px solid #ccc; font-size: 0.7rem; }
+    </style>
+</head>
+<body>
+
+    <div class="header-controls">
+        <button class="info-btn" onclick="toggleInfo(true)">
+            <i data-lucide="info" size="18"></i>
+        </button>
+    </div>
+
+    <div id="infoOverlay" onclick="toggleInfo(false)">
+        <div class="info-content" onclick="event.stopPropagation()">
+            <h3 style="margin-top:0">操作快捷鍵</h3>
+            <p style="font-size: 0.9rem;"><kbd>Space</kbd> 翻轉 | <kbd>Enter</kbd> 朗讀</p>
+            <p style="font-size: 0.9rem;"><kbd>1</kbd> Again | <kbd>2</kbd> Hard | <kbd>3</kbd> Good | <kbd>4</kbd> Easy</p>
+            <button onclick="toggleInfo(false)" style="width:100%; padding:8px; border-radius:8px; border:none; background:#f0f0f0; cursor:pointer">關閉</button>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <div id="cardCountDisplay">剩餘: 0 / 40</div>
+        <div id="statsDisplay" style="font-size: 0.75rem; opacity: 0.7;">A:0 H:0 G:0 E:0</div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="card-wrapper" onclick="flipCard()">
+        <div class="card-inner" id="cardInner">
+            <div class="card-face card-front" id="frontFace">
+                <div class="word-display" id="wordText">載入中...</div>
+                <button class="audio-btn" onclick="speakWord(event)">
+                    <i data-lucide="volume-2" size="20"></i>
+                </button>
+            </div>
+            <div class="card-face card-back">
+                <div class="back-content" id="detailsText"></div>
+                <div style="display:flex; align-items:center; gap:10px; margin: 10px 0;">
+                    <button class="audio-btn" onclick="speakExample(event)">
+                        <i data-lucide="volume-2" size="20"></i>
+                    </button>
+                    <span style="font-size: 0.8rem; color:#888;">播放例句</span>
+                </div>
+                <div class="difficulty-group">
+                    <button class="diff-btn btn-again" onclick="handleDifficulty('again', event)">Again</button>
+                    <button class="diff-btn btn-hard" onclick="handleDifficulty('hard', event)">Hard</button>
+                    <button class="diff-btn btn-good" onclick="handleDifficulty('good', event)">Good</button>
+                    <button class="diff-btn btn-easy" onclick="handleDifficulty('easy', event)">Easy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="finishView" style="display:none; text-align:center;">
+        <h2>🎉 完成複習！</h2>
+        <button onclick="location.reload()" style="padding:10px 20px; border-radius:15px; border:none; background:var(--btn-good); cursor:pointer">重新開始</button>
+    </div>
+
+    <div class="footer">版權所有：EllieChen</div>
+
+    <script>
+        // 資料完整嵌入 (40個單字)
+        let queue = [{"word": "confirm", "details": "confirm(v.)確認、證實\n【詞性變化】\nconfirmation(n.)確認、證實\n【搭配詞】\nconfirm a reservation 確認預約\nconfirm the schedule 確認行程\n【例句】\nPlease call the hotel to confirm your reservation for tonight.\n他們在深夜才抵達倫敦。", "example": "Please call the hotel to confirm your reservation for tonight."}, {"word": "reserve", "details": "reserve(v.)預約、保留\n【詞性變化】\nreservation(n.)預約、保留\n【搭配詞】\nreserve a table 預約桌位\nreserve a room 預定房間\n【例句】\nI would like to reserve a table for two at 7 p.m.\n（我想預約晚上七點兩位用餐。）", "example": "I would like to reserve a table for two at 7 p.m."}, {"word": "cancel", "details": "cancel(v.)取消\n【詞性變化】\ncancellation(n.)取消\n【搭配詞】\ncancel a flight 取消航班\ncancel an order 取消訂單\n【例句】\nThe outdoor concert was cancelled due to the heavy rain.\n（戶外演唱會因為大雨而取消了。）", "example": "The outdoor concert was cancelled due to the heavy rain."}, {"word": "contact", "details": "contact(v.)聯絡、聯繫\n【詞性變化】\ncontact(n.)聯絡人、聯繫\n【搭配詞】\ncontact the office 聯絡辦公室\ncontact information 聯絡資訊\n【例句】\nYou can contact me by email if you have any further questions.\n（如果您有任何進一步的問題，可以透過電子郵件與我聯絡。）", "example": "You can contact me by email if you have any further questions."}, {"word": "order", "details": "order(v.)訂購、點餐\n【詞性變化】\norder(n.)訂單、順序\n【搭配詞】\norder some food 點一些食物\nplace an order 下訂單\n【例句】\nHe ordered a new laptop from the official website yesterday.\n（他昨天在官方網站上訂購了一台新的筆記型電腦。）", "example": "He ordered a new laptop from the official website yesterday."}, {"word": "Feedback", "details": "feedback (n.) 回饋；反應\n【搭配詞】positive feedback 正面回饋；provide feedback 提供回饋\n【例句】The customer provided valuable feedback on the new software. (客戶對這款新軟體提供了寶貴的回饋。)", "example": "The customer provided valuable feedback on the new software."}, {"word": "Facility", "details": "facility (n.) 設施；設備\n【搭配詞】sports facilities 運動設施；manufacturing facility 製造工廠\n【例句】The new community center offers modern fitness facilities. (新的社區中心提供現代化的健身設施。)", "example": "The new community center offers modern fitness facilities."}, {"word": "Schedule", "details": "schedule (n.) 時間表；進度表 (v.) 安排\n【搭配詞】behind schedule 進度落後；ahead of schedule 進度超前\n【例句】We need to finalize the schedule for the upcoming project. (我們需要定下即將到來的項目進度表。)", "example": "We need to finalize the schedule for the upcoming project."}, {"word": "Estimate", "details": "estimate (n./v.) 估計；預算\n【搭配詞】rough estimate 初步估計；cost estimate 成本估算\n【例句】The contractor gave us a cost estimate for the house renovation. (承包商給了我們房屋裝修的成本估算。)", "example": "The contractor gave us a cost estimate for the house renovation."}, {"word": "Requirement", "details": "requirement (n.) 要求；必要條件\n【詞性變化】require (v.) 需要；要求\n【搭配詞】minimum requirements 最低要求；meet the requirements 符合要求\n【例句】Candidates must meet the minimum requirements for the position. (候選人必須符合該職位的最低要求。)", "example": "Candidates must meet the minimum requirements for the position."}, {"word": "Procedure", "details": "procedure (n.) 程序；步驟\n【搭配詞】standard procedure 標準程序；safety procedure 安全程序\n【例句】Please follow the standard procedure for applying for a leave. (請按照申請休假的標準程序進行。)", "example": "Please follow the standard procedure for applying for a leave."}, {"word": "Contract", "details": "contract (n.) 合約；契約 (v.) 簽約；縮小\n【搭配詞】sign a contract 簽署合約；break a contract 違約\n【例句】Both parties signed the contract after the final negotiation. (在最後一次談判後，雙方簽署了合約。)", "example": "Both parties signed the contract after the final negotiation."}, {"word": "Benefit", "details": "benefit (n.) 利益；津貼 (v.) 對...有益\n【詞性變化】beneficial (adj.) 有益的\n【搭配詞】employee benefits 員工福利；mutual benefit 互利\n【例句】The new policy will benefit all employees in the company. (新政策將使公司所有員工受益。)", "example": "The new policy will benefit all employees in the company."}, {"word": "Proposal", "details": "proposal (n.) 提案；建議\n【詞性變化】propose (v.) 提議\n【搭配詞】submit a proposal 提交提案；project proposal 專案提案\n【例句】The board is reviewing the proposal for the new marketing campaign. (董事會正在審查新行銷活動的提案。)", "example": "The board is reviewing the proposal for the new marketing campaign."}, {"word": "Budget", "details": "budget (n.) 預算 (v.) 編列預算\n【搭配詞】within budget 在預算內；budget cuts 預算削減\n【例句】The project was completed within budget and on time. (該專案在預算內且準時完成。)", "example": "The project was completed within budget and on time."}, {"word": "Inquiry", "details": "inquiry (n.) 詢問；查詢\n【詞性變化】inquire (v.) 詢問\n【搭配詞】make an inquiry 進行詢問；customer inquiry 客戶查詢\n【例句】We received an inquiry regarding the availability of the product. (我們收到一封關於該產品是否有貨的詢問。)", "example": "We received an inquiry regarding the availability of the product."}, {"word": "Investment", "details": "investment (n.) 投資；投入\n【詞性變化】invest (v.) 投資\n【搭配詞】foreign investment 外國投資；make an investment 進行投資\n【例句】Education is considered a long-term investment in the future. (教育被視為對未來的一項長期投資。)", "example": "Education is considered a long-term investment in the future."}, {"word": "Efficiency", "details": "efficiency (n.) 效率；效能\n【詞性變化】efficient (adj.) 有效率的\n【搭配詞】improve efficiency 提高效率；energy efficiency 能源效率\n【例句】The new management system significantly improved office efficiency. (新的管理系統顯著提高了辦公室的效率。)", "example": "The new management system significantly improved office efficiency."}, {"word": "Challenge", "details": "challenge (n.) 挑戰 (v.) 挑戰；質疑\n【詞性變化】challenging (adj.) 具挑戰性的\n【搭配詞】face a challenge 面對挑戰；overcome a challenge 克服挑戰\n【例句】Starting a new business is a major challenge for entrepreneurs. (創辦新事業對創業家來說是一項重大挑戰。)", "example": "Starting a new business is a major challenge for entrepreneurs."}, {"word": "Strategy", "details": "strategy (n.) 策略；戰略\n【詞性變化】strategic (adj.) 策略性的\n【搭配詞】marketing strategy 行銷策略；long-term strategy 長期策略\n【例句】The company is developing a new strategy to increase market share. (公司正在制定新策略以增加市場佔有率。)", "example": "The company is developing a new strategy to increase market share."}, {"word": "Compliance", "details": "compliance (n.) 遵守；服從\n【詞性變化】comply (v.) 遵守\n【搭配詞】in compliance with 符合...；regulatory compliance 合規\n【例句】The factory was found to be in compliance with safety regulations. (工廠被發現符合安全規範。)", "example": "The factory was found to be in compliance with safety regulations."}, {"word": "Productivity", "details": "productivity (n.) 生產力；生產率\n【詞性變化】productive (adj.) 多產的；富有成效的\n【搭配詞】increase productivity 提高生產力；labor productivity 勞動生產力\n【例句】Flexible working hours can help increase employee productivity. (彈性工作時間有助於提高員工生產力。)", "example": "Flexible working hours can help increase employee productivity."}, {"word": "Innovation", "details": "innovation (n.) 創新；革新\n【詞性變化】innovate (v.) 創新；innovative (adj.) 創新的\n【搭配詞】technological innovation 技術創新；product innovation 產品創新\n【例句】Innovation is key to staying competitive in the tech industry. (創新是科技產業保持競爭力的關鍵。)", "example": "Innovation is key to staying competitive in the tech industry."}, {"word": "Evaluation", "details": "evaluation (n.) 評估；評價\n【詞性變化】evaluate (v.) 評估\n【搭配詞】performance evaluation 績效評估；program evaluation 計畫評估\n【例句】The annual performance evaluation will take place next week. (年度績效評估將於下週進行。)", "example": "The annual performance evaluation will take place next week."}, {"word": "Negotiation", "details": "negotiation (n.) 談判；協商\n【詞性變化】negotiate (v.) 談判\n【搭配詞】enter into negotiations 開始談判；successful negotiation 成功的談判\n【例句】After weeks of negotiation, the two companies reached an agreement. (經過數週的談判，兩家公司達成協議。)", "example": "After weeks of negotiation, the two companies reached an agreement."}, {"word": "Candidate", "details": "candidate (n.) 候選人；應試者\n【搭配詞】ideal candidate 理想人選；job candidate 職位申請人\n【例句】We have interviewed several qualified candidates for the manager position. (我們面試了幾位經理職位的合格人選。)", "example": "We have interviewed several qualified candidates for the manager position."}, {"word": "Inventory", "details": "inventory (n.) 庫存；存貨清單\n【搭配詞】take inventory 盤點存貨；inventory control 庫存管理\n【例句】The warehouse staff needs to take inventory at the end of every month. (倉庫人員需要在每月底進行盤點。)", "example": "The warehouse staff needs to take inventory at the end of every month."}, {"word": "Department", "details": "department (n.) 部門；系\n【搭配詞】marketing department 行銷部門；human resources department 人事部門\n【例句】She was recently transferred to the accounting department. (她最近被調到了會計部門。)", "example": "She was recently transferred to the accounting department."}, {"word": "Signature", "details": "signature (n.) 簽名；署名\n【詞性變化】sign (v.) 簽名\n【搭配詞】digital signature 數位簽章；put your signature 簽名\n【例句】Please provide your signature at the bottom of the document. (請在文件底部簽名。)", "example": "Please provide your signature at the bottom of the document."}, {"word": "Resolution", "details": "resolution (n.) 解決；決議；決心\n【詞性變化】resolve (v.) 解決\n【搭配詞】conflict resolution 衝突解決；New Year's resolution 新年計畫\n【例句】The board passed a resolution to increase the annual budget. (董事會通過了增加年度預算的決議。)", "example": "The board passed a resolution to increase the annual budget."}, {"word": "Check-in", "details": "check-in (n./v.) 報到；登記入住\n【搭配詞】check-in counter 報到櫃檯；early check-in 提前入住\n【例句】The check-in counter for the flight closes 45 minutes before departure. (航班的報到櫃檯在出發前45分鐘關閉。)", "example": "The check-in counter for the flight closes 45 minutes before departure."}, {"word": "Available", "details": "available (adj.) 可得到的；空閒的\n【詞性變化】availability (n.) 可用性；有效性\n【搭配詞】available options 可用的選項；make something available 使某物可用\n【例句】Is there a room available for the weekend? (週末還有空房嗎？)", "example": "Is there a room available for the weekend?"}, {"word": "Promotion", "details": "promotion (n.) 晉升；促銷\n【詞性變化】promote (v.) 晉升；推廣\n【搭配詞】get a promotion 獲得晉升；sales promotion 促銷活動\n【例句】She received a promotion after working hard for two years. (努力工作兩年後，她獲得了晉升。)", "example": "She received a promotion after working hard for two years."}, {"word": "Conference", "details": "conference (n.) 會議；研討會\n【搭配詞】hold a conference 舉辦會議；press conference 記者會\n【例句】The annual international conference will be held in Tokyo next month. (年度國際會議將於下個月在東京舉行。)", "example": "The annual international conference will be held in Tokyo next month."}, {"word": "Agenda", "details": "agenda (n.) 議程；議事日程\n【搭配詞】on the agenda 在議程上；set the agenda 制定議程\n【例句】What is the first item on the agenda for today's meeting? (今天會議議程的第一項是什麼？)", "example": "What is the first item on the agenda for today's meeting?"}, {"word": "Effective", "details": "effective (adj.) 有效的；生效的\n【詞性變化】effectively (adv.) 有效地；effect (n.) 影響；效果\n【搭配詞】become effective 生效；effective communication 有效溝通\n【例句】The new policy will become effective starting next Monday. (新政策將從下週一開始生效。)", "example": "The new policy will become effective starting next Monday."}, {"word": "Expansion", "details": "expansion (n.) 擴張；擴大\n【詞性變化】expand (v.) 擴展；膨脹\n【搭配詞】business expansion 業務擴張；overseas expansion 海外擴張\n【例句】The tech company is planning a major expansion into European markets. (這間科技公司正計劃向歐洲市場進行大規模擴張。)", "example": "The tech company is planning a major expansion into European markets."}, {"word": "Identify", "details": "identify (v.) 識別；確認\n【詞性變化】identification (n.) 身分證明；識別\n【搭配詞】identify a problem 找出問題；identify the cause 確定原因\n【例句】The technician was able to identify the problem with the server quickly. (技術人員能夠迅速找出伺服器的問題所在。)", "example": "The technician was able to identify the problem with the server quickly."}, {"word": "Instruction", "details": "instruction (n.) 指示；說明\n【詞性變化】instruct (v.) 指導；指示\n【搭配詞】follow instructions 遵守指示；safety instructions 安全說明\n【例句】Please read the instructions carefully before assembling the chair. (組裝椅子前請仔細閱讀說明書。)", "example": "Please read the instructions carefully before assembling the chair."}, {"word": "Option", "details": "option (n.) 選擇；選項\n【詞性變化】optional (adj.) 可選擇的；非強制性的\n【搭配詞】available options 可用的選項；have no option but to 不得不...\n【例句】Customers have several payment options, including credit cards and PayPal. (顧客有多種付款選擇，包括信用卡和 PayPal。)", "example": "Customers have several payment options, including credit cards and PayPal."}];
+
+        let originalTotal = 0;
+        let stats = { again: 0, hard: 0, good: 0, easy: 0 };
+        let isFlipped = false;
+        const colors = ['#C7CEEA', '#B5EAD7', '#E2F0CB', '#FFF9C4', '#FFDAC1', '#FFB7B2'];
+
+        function init() {
+            originalTotal = queue.length;
+            updateDisplay();
+            lucide.createIcons();
+        }
+
+        function toggleInfo(show) {
+            document.getElementById('infoOverlay').style.display = show ? 'flex' : 'none';
+        }
+
+        function updateDisplay() {
+            if (queue.length === 0) {
+                document.querySelector('.card-wrapper').style.display = 'none';
+                document.querySelector('.progress-container').style.display = 'none';
+                document.querySelector('.info-panel').style.display = 'none';
+                document.getElementById('finishView').style.display = 'block';
+                return;
+            }
+
+            const current = queue[0];
+            document.getElementById('wordText').innerText = current.word;
+            document.getElementById('detailsText').innerText = current.details;
+            
+            document.getElementById('cardCountDisplay').innerText = `剩餘: ${queue.length} / ${originalTotal}`;
+            document.getElementById('statsDisplay').innerText = `A:${stats.again} H:${stats.hard} G:${stats.good} E:${stats.easy}`;
+            
+            const progress = ((originalTotal - queue.length) / originalTotal) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+
+            document.getElementById('frontFace').style.backgroundColor = colors[queue.length % colors.length];
+
+            isFlipped = false;
+            document.getElementById('cardInner').classList.remove('flipped');
+            setTimeout(() => speak(current.word), 500);
+        }
+
+        function flipCard() {
+            if (isFlipped) return;
+            isFlipped = true;
+            document.getElementById('cardInner').classList.add('flipped');
+            setTimeout(() => speak(queue[0].example), 400);
+        }
+
+        function handleDifficulty(level, event) {
+            if (event) event.stopPropagation();
+            if (!isFlipped && queue.length > 0) { flipCard(); return; }
+
+            stats[level]++;
+            const current = queue.shift();
+
+            if (level === 'again') {
+                queue.splice(1, 0, current);
+            } else if (level === 'hard') {
+                const mid = Math.floor(queue.length / 2);
+                queue.splice(mid, 0, current);
+            } else if (level === 'good') {
+                queue.push(current);
+            }
+            updateDisplay();
+        }
+
+        function speak(text) {
+            if (!text) return;
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'en-US';
+            msg.rate = 0.9;
+            window.speechSynthesis.speak(msg);
+        }
+
+        function speakWord(e) { e.stopPropagation(); speak(queue[0].word); }
+        function speakExample(e) { e.stopPropagation(); speak(queue[0].example); }
+
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('infoOverlay').style.display === 'flex') {
+                if (e.key === 'Escape') toggleInfo(false);
+                return;
+            }
+            switch(e.key) {
+                case ' ': flipCard(); break;
+                case '1': handleDifficulty('again'); break;
+                case '2': handleDifficulty('hard'); break;
+                case '3': handleDifficulty('good'); break;
+                case '4': handleDifficulty('easy'); break;
+                case 'Enter': 
+                    if (isFlipped) speak(queue[0].example);
+                    else speak(queue[0].word);
+                    break;
+            }
+        });
+
+        window.onload = init;
+    </script>
+</body>
+</html>
